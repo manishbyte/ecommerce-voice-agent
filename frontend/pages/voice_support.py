@@ -24,7 +24,7 @@ components.html(f'<iframe src="{url}" allow="microphone; autoplay" '
 c1, c2 = st.columns([1, 1])
 c1.link_button("🔗 Open in its own tab / on your phone", url, use_container_width=True)
 if not client.PUBLIC_URL.startswith("https://") and "localhost" not in client.PUBLIC_URL and "127.0.0.1" not in client.PUBLIC_URL:
-    c2.warning("The microphone needs HTTPS or localhost. Set BACKEND_PUBLIC_URL to an https:// address (see README).")
+    c2.warning("The microphone needs HTTPS")
 
 
 def latest_session() -> dict | None:
