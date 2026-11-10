@@ -1,0 +1,47 @@
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: voice_agent
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d voice_agent"]
+      interval: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: manishbhosale/voice-agent-backend:1.0
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/voice_agent
+      CORS_ORIGINS: http://localhost:8501
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: manishbhosale/voice-agent-frontend:1.0
+    environment:
+      BACKEND_URL: http://backend:8000
+      BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:

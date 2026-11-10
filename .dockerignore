@@ -1,0 +1,24 @@
+.git/
+.gitignore
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+*.log
+
+# Secrets
+.env
+.env.*
+**/.env
+**/.env.*
+**/secrets.toml
+
+# Local development files
+.vscode/
+.idea/
