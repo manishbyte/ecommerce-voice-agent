@@ -145,7 +145,7 @@ const LANGS = [['english','English'],['hindi','हिंदी'],['marathi','म
 let ws, ctx, stream, node, proc, muted=false, active=false, speaking=false, retries=0, nextT=0, rate=24000, odd=null, resamp, sendBuf=[], pendingAction=null, customers=[], micPromise=null, connected=false, langSet=false;
 
 const secure = window.isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-if(!secure){const w=$('warn');w.style.display='block';w.innerHTML='<b>Microphone available on this connection.</b> Browsers only allow the microphone on <b>HTTPS</b> or <b>http://localhost</b>. Open this page through an https:// address (see the README), or type your messages below.';}
+if(!secure){const w=$('warn');w.style.display='block';w.innerHTML='<b>Microphone available on this connection.</b>}
 
 function setOrb(state,label){$('ow').dataset.state=state;if(label!==undefined)$('status').textContent=label;}
 function addMsg(role,text){
