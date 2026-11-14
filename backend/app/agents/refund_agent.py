@@ -2,20 +2,25 @@
 from __future__ import annotations
 
 from app.agents.order_agent import clarification_update, resolve_target_order, resolved_update
+# Functions to resolve orders and update conversation state
 from app.agents.state import AgentState, TurnTools, merge_result
 from app.core.logging import emit_event
 from app.guardrails.action_confirmation import propose_action
 
 
 async def refund_agent_node(state: AgentState) -> dict:
+    # Main entry point for the refund specialist agent
     conv, intent = state["conversation_id"], state.get("current_intent")
     await emit_event(conv, "specialist_started", agent="refund", summary="Refund agent started")
+    # Log the start of the refund specialist for observability
     tools = TurnTools(state, "refund")
+    # Initialize tool dispatcher for this turn, scoped to "refund"
     ent = state.get("entities") or {}
     result: dict = {"intent": intent}
     extra: dict = {}
 
     if intent == "refund_status":
+        # Branch for "refund_status" intent: retrieve existing refunds and eligibility
         oid = ent.get("order_id") or (state.get("focus_order_id") if not ent.get("product_query") else None)
         if not oid and ent.get("product_query"):
             oid = (await resolve_target_order(state, tools)).get("order_id")
@@ -31,6 +36,7 @@ async def refund_agent_node(state: AgentState) -> dict:
         if oid:
             extra = resolved_update(oid)
     else:  # refund_request
+        # Branch for "refund_request" intent: handle new refund requests
         target = await resolve_target_order(state, tools, prefer_active=False)
         if target.get("no_orders"):
             result["error"] = "No orders were found on this account."
@@ -39,6 +45,7 @@ async def refund_agent_node(state: AgentState) -> dict:
             extra = clarification_update(state, target)
         else:
             oid = target["order_id"]
+            # Retrieve order ID and verify refund eligibility
             el = await tools("check_refund_eligibility", order_id=oid)
             extra = resolved_update(oid)
             if not el["ok"]:
@@ -46,12 +53,14 @@ async def refund_agent_node(state: AgentState) -> dict:
             else:
                 result["eligibility"] = el["data"]
                 if el["data"]["eligible"]:
+                    # If eligible, craft a human‑readable summary and propose a refund action
                     summary = (f"Request a refund of ₹{el['data']['refund_amount']:,} for order {oid}. "
                                f"This is a simulated refund record in this demo.")
                     pa = await propose_action(conv, state["customer_id"], "request_refund", {"order_id": oid}, summary)
                     result["proposed_action"] = {"summary": summary, "action_type": "request_refund"}
                     extra["pending_action"] = pa
                 elif el["data"]["reason_code"] == "refund_exists":
+                    # If a refund already exists, fetch its status to inform the user
                     rs = await tools("get_refund_status", order_id=oid)
                     result["refunds"] = rs.get("data") or []
     await emit_event(conv, "specialist_completed", agent="refund", summary="Refund agent finished")
